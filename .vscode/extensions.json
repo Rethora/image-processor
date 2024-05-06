@@ -1,0 +1,14 @@
+{
+    "recommendations": [
+        "shardulm94.trailing-spaces",
+        "aaron-bond.better-comments",
+        "vivaxy.vscode-conventional-commits",
+        "esbenp.prettier-vscode",
+        "equimper.react-native-react-redux",
+        "eamodio.gitlens",
+        "naumovs.color-highlight",
+        "oderwat.indent-rainbow",
+        "streetsidesoftware.code-spell-checker",
+        "github.vscode-github-actions"
+    ],
+}
