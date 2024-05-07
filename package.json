@@ -1,6 +1,6 @@
 {
-  "name": "image-processor",
-  "productName": "Image Processor",
+  "name": "custom-borders",
+  "productName": "custom-borders",
   "version": "1.0.0",
   "description": "My Electron application description",
   "main": ".vite/build/main.js",
