@@ -1,6 +1,6 @@
 {
-  "name": "custom-borders",
-  "productName": "custom-borders",
+  "name": "image-processor",
+  "productName": "Image Processor",
   "version": "1.0.0",
   "description": "My Electron application description",
   "main": ".vite/build/main.js",
@@ -21,6 +21,7 @@
     "@electron-forge/plugin-fuses": "^7.4.0",
     "@electron-forge/plugin-vite": "^7.4.0",
     "@electron/fuses": "^1.8.0",
+    "@types/node": "^20.12.8",
     "@types/react": "^18.3.1",
     "@types/react-dom": "^18.3.0",
     "@typescript-eslint/eslint-plugin": "^5.0.0",
@@ -42,7 +43,6 @@
     "electron-squirrel-startup": "^1.0.0",
     "painterro": "^1.2.87",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "sharp": "^0.33.3"
+    "react-dom": "^18.3.1"
   }
 }

@@ -1,5 +1,4 @@
-import React, { useEffect, useCallback, useReducer } from 'react'
-import Canvas from './Canvas'
+import React, { useCallback, useReducer } from 'react'
 import ImageEditor from './ImageEdtior'
 
 interface AspectRatio {
@@ -11,10 +10,11 @@ interface Color {
   r: number
   g: number
   b: number
+  a: number
 }
 
 interface State {
-  image: File
+  image: string
   processedImage: string
   aspectRatio: AspectRatio
   borderThickness: number
@@ -31,6 +31,7 @@ const hexToRgb = (hex: string) => {
 }
 
 const App = () => {
+  const canvasRef = React.useRef<HTMLCanvasElement>(null)
   const [state, setState] = useReducer(
     (state: State, setState: Partial<State>) => ({ ...state, ...setState }),
     {
@@ -38,19 +39,18 @@ const App = () => {
       processedImage: '',
       aspectRatio: { width: 0, height: 0 },
       borderThickness: 0,
-      borderColor: { r: 0, g: 0, b: 0 },
+      borderColor: { r: 0, g: 0, b: 0, a: 1 },
     }
   )
 
-  useEffect(() => {
-    window.api.receive('image-processed', (processedImage: string) => {
-      setState({ processedImage })
-    })
-  }, [])
-
   const onImageChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
-      setState({ image: event.target.files[0] })
+      const file = event.target.files[0]
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        setState({ image: event.target.result as string })
+      }
+      reader.readAsDataURL(file)
     },
     []
   )
@@ -79,31 +79,52 @@ const App = () => {
     [state.aspectRatio.width]
   )
 
+  const drawImageWithAspectRatio = useCallback(
+    (img: HTMLImageElement) => {
+      const canvas = canvasRef.current
+      const ctx = canvas.getContext('2d')
+      const { width: targetWidth, height: targetHeight } = state.aspectRatio
+
+      const imageRatio = img.width / img.height
+      let targetRatio
+      if (targetHeight > 0 && targetWidth > 0) {
+        targetRatio = targetWidth / targetHeight
+      } else {
+        targetRatio = imageRatio
+      }
+      let finalWidth, finalHeight
+
+      if (imageRatio > targetRatio) {
+        finalWidth = img.width
+        finalHeight = img.width / targetRatio
+      } else {
+        finalWidth = img.height * targetRatio
+        finalHeight = img.height
+      }
+
+      canvas.width = finalWidth + 2 * state.borderThickness
+      canvas.height = finalHeight + 2 * state.borderThickness
+
+      const xOffset = (finalWidth - img.width) / 2 + state.borderThickness
+      const yOffset = (finalHeight - img.height) / 2 + state.borderThickness
+
+      ctx.fillStyle = `rgba(${state.borderColor.r}, ${state.borderColor.g}, ${state.borderColor.b}, ${state.borderColor.a})`
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+      ctx.drawImage(img, xOffset, yOffset, img.width, img.height)
+      setState({ processedImage: canvas.toDataURL() })
+    },
+    [canvasRef, state.aspectRatio, state.borderThickness, state.borderColor]
+  )
+
   const onSubmit = useCallback(
     async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault()
 
-      const reader = new FileReader()
-      const { aspectRatio, borderThickness, borderColor, image } = state
-      if (aspectRatio.width > 0 && aspectRatio.height > 0) {
-        reader.onload = (event) => {
-          window.api.send('process-image', {
-            image: event.target.result,
-            aspectRatio,
-            borderThickness,
-            borderColor,
-          })
-        }
-      } else {
-        reader.onload = () => {
-          setState({ processedImage: reader.result as string })
-        }
-      }
-      if (image) {
-        reader.readAsDataURL(image)
-      }
+      const img = new Image()
+      img.onload = () => drawImageWithAspectRatio(img)
+      img.src = state.image
     },
-    [state]
+    [drawImageWithAspectRatio]
   )
 
   return (
@@ -138,8 +159,24 @@ const App = () => {
             name="borderColor"
             onChange={(e) => {
               const color = e.target.value
-              const rgb = hexToRgb(color)
-              setState({ borderColor: rgb })
+              const { r, g, b } = hexToRgb(color)
+              setState({ borderColor: { ...state.borderColor, r, g, b } })
+            }}
+          />
+          <label htmlFor="alpha" style={{ margin: '0 8px' }}>
+            Alpha:
+          </label>
+          <input
+            name="alpha"
+            type="number"
+            min={0}
+            max={1}
+            step={0.1}
+            value={state.borderColor.a}
+            onChange={(e) => {
+              setState({
+                borderColor: { ...state.borderColor, a: +e.target.value },
+              })
             }}
           />
         </div>
@@ -157,11 +194,7 @@ const App = () => {
         <input type="submit" value="Process" />
       </form>
       <br />
-      {state.processedImage && (
-        <div>
-          <Canvas image={state.processedImage} />
-        </div>
-      )}
+      <canvas ref={canvasRef} />
 
       {state.processedImage && (
         <div>
